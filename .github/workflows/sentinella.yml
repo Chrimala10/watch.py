@@ -3,6 +3,10 @@ on:
   schedule:
     - cron: "0 */6 * * *"
   workflow_dispatch:
+  push:
+    paths:
+      - "watch.py"
+      - ".github/workflows/sentinella.yml"
 permissions:
   contents: write
 jobs:
@@ -13,29 +17,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: controlla
+      - name: controlla e scarica
         id: check
         continue-on-error: true
         run: python watch.py
-      - name: salva stato
-        run: |
-          git config user.name bot
-          git config user.email bot@local
-          git add stato.json
-          git commit -m "stato $(date -u +%FT%TZ)" || echo "nessun cambiamento"
-          git push
-      - name: archivia i video
-        if: steps.check.outcome == 'failure'
-        run: |
-          pip install -U yt-dlp
-          yt-dlp --extractor-args "tiktok:api_hostname=api22-normal-c-useast2a.tiktokv.com" \
-                 --write-thumbnail --write-info-json \
-                 -o "%(id)s.%(ext)s" "https://www.tiktok.com/@gajabordessa"
-      - name: committa i video
-        if: steps.check.outcome == 'failure'
+      - name: salva
+        if: always()
         run: |
           git config user.name bot
           git config user.email bot@local
           git add -A
-          git commit -m "video $(date -u +%FT%TZ)" || echo "niente da salvare"
-          git push
+          git commit -m "aggiornamento $(date -u +%FT%TZ)" || echo "nessuna modifica"
+          git push || echo "push rifiutato"
